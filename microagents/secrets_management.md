@@ -77,13 +77,13 @@ import json
 def create_secret(secret_name, secret_value, description=""):
     """Create a new secret in AWS Secrets Manager"""
     client = boto3.client('secretsmanager')
-    
+
     response = client.create_secret(
         Name=secret_name,
         Description=description,
         SecretString=json.dumps(secret_value)
     )
-    
+
     return response['ARN']
 ```
 
@@ -99,9 +99,9 @@ aws secretsmanager get-secret-value --secret-id "your-secret-name"
 def get_secret(secret_name):
     """Retrieve a secret from AWS Secrets Manager"""
     client = boto3.client('secretsmanager')
-    
+
     response = client.get_secret_value(SecretId=secret_name)
-    
+
     if 'SecretString' in response:
         return json.loads(response['SecretString'])
     else:
@@ -167,14 +167,14 @@ def add_to_category(secret_name, category, key, value):
     client = boto3.client('secretsmanager')
     response = client.get_secret_value(SecretId=secret_name)
     secret_data = json.loads(response['SecretString'])
-    
+
     # Create category if it doesn't exist
     if category not in secret_data:
         secret_data[category] = {}
-    
+
     # Add or update the key-value pair
     secret_data[category][key] = value
-    
+
     # Update the secret
     client.put_secret_value(
         SecretId=secret_name,
@@ -296,38 +296,38 @@ def read_file(file_path):
 def update_secret_with_ssh_keys(secret_name):
     """Update AWS Secrets Manager secret with SSH keys"""
     client = boto3.client('secretsmanager')
-    
+
     # Get the current secret value
     response = client.get_secret_value(SecretId=secret_name)
     current_secret = json.loads(response['SecretString'])
-    
+
     # Initialize ssh_keys category if it doesn't exist
     if 'ssh_keys' not in current_secret:
         current_secret['ssh_keys'] = {}
-    
+
     # Read SSH keys
     ssh_dir = os.path.expanduser('~/.ssh')
-    
+
     # Example for a specific key
     key_name = "my_key"
     private_key = read_file(os.path.join(ssh_dir, key_name))
     public_key = read_file(os.path.join(ssh_dir, f"{key_name}.pub"))
-    
+
     current_secret['ssh_keys'][key_name] = {
         'private_key': private_key,
         'public_key': public_key
     }
-    
+
     # SSH config
     ssh_config = read_file(os.path.join(ssh_dir, 'config'))
     current_secret['ssh_keys']['config'] = ssh_config
-    
+
     # Update the secret
     client.put_secret_value(
         SecretId=secret_name,
         SecretString=json.dumps(current_secret)
     )
-    
+
     print(f"Successfully stored SSH keys in {secret_name}")
 ```
 
@@ -357,21 +357,21 @@ def write_file(file_path, content, permissions=0o600):
 def retrieve_ssh_keys(secret_name):
     """Retrieve SSH keys from AWS Secrets Manager"""
     client = boto3.client('secretsmanager')
-    
+
     # Get the secret value
     response = client.get_secret_value(SecretId=secret_name)
     secret_data = json.loads(response['SecretString'])
-    
+
     if 'ssh_keys' not in secret_data:
         print("No SSH keys found in the secret")
         return False
-    
+
     ssh_keys = secret_data['ssh_keys']
     ssh_dir = os.path.expanduser('~/.ssh')
-    
+
     # Ensure SSH directory exists with proper permissions
     ensure_directory(ssh_dir)
-    
+
     # Process each key set
     for key_name, key_data in ssh_keys.items():
         if key_name == 'config':
@@ -386,12 +386,12 @@ def retrieve_ssh_keys(secret_name):
                 private_key_path = os.path.join(ssh_dir, key_name)
                 write_file(private_key_path, key_data['private_key'], 0o600)
                 print(f"Saved private key to {private_key_path}")
-                
+
                 # Save public key
                 public_key_path = os.path.join(ssh_dir, f"{key_name}.pub")
                 write_file(public_key_path, key_data['public_key'], 0o644)
                 print(f"Saved public key to {public_key_path}")
-    
+
     print("SSH keys retrieved and saved successfully")
     return True
 ```
@@ -479,18 +479,18 @@ def get_database_credentials():
     """Retrieve database credentials from Secrets Manager"""
     secret_name = os.environ.get('DB_SECRET_NAME', 'database-credentials')
     region_name = os.environ.get('AWS_REGION', 'us-east-1')
-    
+
     # Create a Secrets Manager client
     session = boto3.session.Session()
     client = session.client(
         service_name='secretsmanager',
         region_name=region_name
     )
-    
+
     try:
         response = client.get_secret_value(SecretId=secret_name)
         secret = json.loads(response['SecretString'])
-        
+
         return {
             'host': secret.get('database', {}).get('host'),
             'username': secret.get('database', {}).get('username'),
@@ -517,24 +517,24 @@ def run_ssh_command_with_stored_key(secret_name, host, command):
     client = boto3.client('secretsmanager')
     response = client.get_secret_value(SecretId=secret_name)
     secret_data = json.loads(response['SecretString'])
-    
+
     # Get the SSH key
     ssh_keys = secret_data.get('ssh_keys', {})
     key_name = 'my_key'  # Replace with your key name
     key_data = ssh_keys.get(key_name, {})
-    
+
     if not key_data or 'private_key' not in key_data:
         raise ValueError(f"SSH key '{key_name}' not found in secret")
-    
+
     # Create a temporary file for the private key
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as key_file:
         key_file.write(key_data['private_key'])
         key_file_path = key_file.name
-    
+
     try:
         # Set proper permissions for the key file
         os.chmod(key_file_path, 0o600)
-        
+
         # Run the SSH command
         ssh_cmd = [
             'ssh',
@@ -544,12 +544,12 @@ def run_ssh_command_with_stored_key(secret_name, host, command):
             host,
             command
         ]
-        
+
         result = subprocess.run(ssh_cmd, capture_output=True, text=True)
-        
+
         if result.returncode != 0:
             raise Exception(f"SSH command failed: {result.stderr}")
-        
+
         return result.stdout
     finally:
         # Clean up the temporary key file
