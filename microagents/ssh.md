@@ -35,7 +35,7 @@ This microagent provides capabilities for establishing and managing SSH connecti
 ssh username@hostname
 ```
 
-When prompted, the user will need to enter their password.
+When prompted, you should ask the user for their password or a private key.
 
 ### Key-Based Authentication
 
@@ -145,6 +145,19 @@ These scripts handle:
 For more details on secrets management, use the Secrets Management microagent:
 ```
 secrets management
+```
+
+### Local Storage with Proper Permissions
+
+The most basic approach is to ensure proper file permissions:
+
+```bash
+# Set correct permissions for private keys
+chmod 600 ~/.ssh/id_ed25519
+# Set correct permissions for public keys
+chmod 644 ~/.ssh/id_ed25519.pub
+# Set correct permissions for SSH directory
+chmod 700 ~/.ssh
 ```
 
 ## Security Best Practices
