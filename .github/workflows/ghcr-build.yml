@@ -26,7 +26,7 @@ env:
 jobs:
   ghcr_build_app:
     name: Build App Image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-minimal
     permissions:
       contents: read
       packages: write
@@ -66,7 +66,7 @@ jobs:
 
   ghcr_build_runtime:
     name: Build Runtime Image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-minimal
     permissions:
       contents: read
       packages: write
@@ -121,7 +121,7 @@ jobs:
 
   verify_hash_equivalence_in_runtime_and_app:
     name: Verify Hash Equivalence in Runtime and Docker images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-minimal
     needs: [ghcr_build_runtime, ghcr_build_app]
     strategy:
       fail-fast: false
