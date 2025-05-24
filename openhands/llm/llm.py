@@ -287,8 +287,19 @@ class LLM(RetryMixin, DebugMixin):
 
             # Record start time for latency measurement
             start_time = time.time()
-            # we don't support streaming here, thus we get a ModelResponse
-            resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            try:
+                # we don't support streaming here, thus we get a ModelResponse
+                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            except AttributeError as e:
+                # Handle the case where 'Exception' object has no attribute 'request'
+                if "'Exception' object has no attribute 'request'" in str(e):
+                    # This is a workaround for litellm's exception handling
+                    # The original exception is raised in convert_dict_to_response.py without a request attribute
+                    # We'll add the request attribute to the exception to prevent the AttributeError
+                    setattr(e, 'request', None)
+                    raise
+                # If it's a different AttributeError, re-raise it
+                raise
 
             # Calculate and record latency
             latency = time.time() - start_time

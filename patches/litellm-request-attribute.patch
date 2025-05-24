@@ -1,0 +1,11 @@
+diff --git a/litellm/litellm_core_utils/llm_response_utils/convert_dict_to_response.py b/litellm/litellm_core_utils/llm_response_utils/convert_dict_to_response.py
+index 1234567..8765432 100644
+--- a/litellm/litellm_core_utils/llm_response_utils/convert_dict_to_response.py
++++ b/litellm/litellm_core_utils/llm_response_utils/convert_dict_to_response.py
+@@ -441,6 +441,7 @@ def convert_to_model_response_object(
+         setattr(raised_exception, "status_code", error_args["status_code"])
+         setattr(raised_exception, "message", error_args["message"])
++        setattr(raised_exception, "request", None)
+         raise raised_exception
+
+     try:
